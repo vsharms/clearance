@@ -1,0 +1,58 @@
+# Everything here is free and runs locally: Postgres, Vault (dev mode), Keycloak, nginx, and 3 app replicas.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: clearance
+      POSTGRES_USER: clearance
+      POSTGRES_PASSWORD: clearance
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clearance"]
+      interval: 5s
+      retries: 10
+
+  vault:
+    image: hashicorp/vault:1.17
+    command: server -dev
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: dev-root-token   # dev mode only, never do this for real
+    cap_add: [IPC_LOCK]
+    ports: ["8200:8200"]
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HOSTNAME: http://localhost:8180          # tokens always say iss=localhost:8180
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"     # but the app can still fetch keys at keycloak:8080
+    volumes:
+      - ./deploy/keycloak-realm.json:/opt/keycloak/data/import/realm.json:ro
+    ports: ["8180:8080"]
+
+  app:
+    build: .
+    deploy:
+      replicas: 3
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/clearance
+      SECRET_STORE: vault
+      VAULT_URI: http://vault:8200
+      VAULT_TOKEN: dev-root-token
+      JWT_ISSUER_URI: http://localhost:8180/realms/clearance
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/clearance/protocol/openid-connect/certs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      vault:
+        condition: service_started
+      keycloak:
+        condition: service_started
+
+  nginx:
+    image: nginx:1.27-alpine
+    volumes:
+      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports: ["8080:80"]
+    depends_on: [app]

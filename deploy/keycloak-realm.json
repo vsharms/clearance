@@ -1,0 +1,40 @@
+{
+  "realm": "clearance",
+  "enabled": true,
+  "roles": {
+    "realm": [
+      { "name": "onboarding_admin", "description": "Can submit tenants for onboarding" },
+      { "name": "auditor", "description": "Read only access to tenants and audit trails" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "clearance-cli",
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": false
+    }
+  ],
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "email": "admin@example.gov",
+      "emailVerified": true,
+      "firstName": "Onboarding",
+      "lastName": "Admin",
+      "credentials": [{ "type": "password", "value": "admin", "temporary": false }],
+      "realmRoles": ["onboarding_admin"]
+    },
+    {
+      "username": "auditor",
+      "enabled": true,
+      "email": "auditor@example.gov",
+      "emailVerified": true,
+      "firstName": "Read Only",
+      "lastName": "Auditor",
+      "credentials": [{ "type": "password", "value": "auditor", "temporary": false }],
+      "realmRoles": ["auditor"]
+    }
+  ]
+}

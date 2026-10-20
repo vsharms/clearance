@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: clearance
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/clearance}
+    username: ${DB_USER:clearance}
+    password: ${DB_PASSWORD:clearance}
+  jpa:
+    hibernate:
+      ddl-auto: none   # Flyway owns the schema
+    open-in-view: false
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${JWT_ISSUER_URI:http://localhost:8180/realms/clearance}
+
+clearance:
+  min-audit-retention-days: 90
+  allow-insecure-idp: ${ALLOW_INSECURE_IDP:false}
+  worker-batch-size: 5
+  max-attempts: 5
+  worker-poll-ms: 1000
+  secret-store: ${SECRET_STORE:memory}
+
+vault:
+  uri: ${VAULT_URI:http://localhost:8200}
+  token: ${VAULT_TOKEN:dev-root-token}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true   # /actuator/health/liveness and /readiness for the load balancer
+  otlp:
+    metrics:
+      export:
+        enabled: ${OTLP_ENABLED:false}
+        url: ${OTLP_URL:http://localhost:4318/v1/metrics}
